@@ -323,7 +323,7 @@ class MyServer(BaseHTTPRequestHandler):
      toread-=read
      ti=time.time()
      a.write(self.rfile.read(read))
-     rsize=int(rsize/(time.time()-ti)+0.5)
+     rsize=int(min(rsize/(time.time()-ti)+0.5,10))
     self.rfile.read(46)
   self.send_response(200)
   self.send_header("Content-type", "text/html; charset=utf-8")
