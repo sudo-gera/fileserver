@@ -16,9 +16,12 @@ a=l(open('listfiles').read())
 for w in list(a.keys()):
  if not os.path.exists(w):
   del(a[w])
- if a[w] != os.path.getsize(w):
+ elif a[w] != os.path.getsize(w):
   del(a[w])
   os.remove(w)
+for w in os.listdir('../0f/'):
+ if os.path.isfile(w):
+  a[w]=os.path.getsize(w)
 open('listfiles','w').write(str(a).replace("'",'"'))
 
 q=[w.split() for w in os.popen('ifconfig').read().split('\n')]
