@@ -48,7 +48,7 @@ class MyServer(BaseHTTPRequestHandler):
   global admin
   self.send_response(200)
   path='.'+uqu(self.path)
-  if path =='./0/0/' and admin:
+  if path =='./0/0/' and admin==1:
    self.send_header("Content-type", "text/html; charset=utf-8")
    self.end_headers()
    self.wfile.write(bytes('''
@@ -176,6 +176,13 @@ class MyServer(BaseHTTPRequestHandler):
    <wi>===</wi>
 
    ''','utf-8'))
+   if admin==2:
+    self.wfile.write(bytes('''
+   <form method="post"><button formaction="/0/" name="e" value="1">
+   <h1>exit</h1>
+   </button></form>
+   <wi>===</wi>
+   ''','utf-8')
 
    for w in os.listdir(path):
     self.wfile.write(bytes('''
@@ -304,9 +311,9 @@ class MyServer(BaseHTTPRequestHandler):
     data=self.rfile.read(lenn).decode().replace('+',' ')
     data=uqu(data)
     dec,data=data.split('=',1)
-    if dec=='c=':
+    if dec=='c':
      open('clip','w').write(data)
-    if dec=='a=':
+    if dec=='a':
      s=' '.join(time.asctime().split(':')).split()
      s0=str((int(s[2])+int(s[4]))%100)+s[3][-1]
      print(s0)
@@ -319,7 +326,9 @@ class MyServer(BaseHTTPRequestHandler):
      pas=(s1+s2+s3)*((int(s[3][-1])+int(s[4][-1]))//3+1)
      print(pas)
      if data==pas:
-      admin=0
+      admin=2
+    if dec=='e':
+     admin=1
   self.send_response(200)
   self.send_header("Content-type", "text/html; charset=utf-8")
   self.end_headers()
