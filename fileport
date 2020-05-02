@@ -46,5 +46,5 @@ while st and hostPort < 70000:
  except:
   hostPort+=1
 myServer.server_close()
-os.system('./fileserver '+hostName+' '+str(hostPort)+' '+random.choice(os.listdir('nekopara'))+' '+ngrok+' > log &')
+os.system('./fileserver '+hostName+' '+str(hostPort)+' "'+random.choice(os.listdir('nekopara'))+'" '+ngrok+' > log &')
 print('='*9,hostPort)

@@ -270,15 +270,40 @@ class MyServer(BaseHTTPRequestHandler):
  def do_POST(self):
   global admin
   lenn=int(self.headers['Content-Length'])
-  for llll in 'k':
-   if lenn < 2:
-    self.rfile.read(2)
-    continue
-   data=self.rfile.read(2)
-   if data!=bytearray('-'*2,'utf-8'):
-    dec=data.decode()
-    data=self.rfile.read(lenn-2).decode().replace('+',' ')
+  ct=self.headers['Content-Type']
+  if ct[:9]=='multipart':
+   blen=len(ct.split('=')[1])+8
+   if 1:
+    data=bytearray()
+    while data[-4:]!=bytearray('\r\n\r\n','utf-8'):
+     data+=self.rfile.read(1)
+     lenn-=1
+    toread=lenn-blen
+    fn=uqu(data.decode().replace('+',' ')).split('filename',1)[1].split('"')[1]
+    fn='.'+self.path+fn
+    tosave=0
+    while os.path.exists(fn):
+     tosave+=1
+     fn='.'+self.path+str(tosave)+fn
+    a=l(open('listfiles').read())
+    a[fn]=toread
+    open('listfiles','w').write(str(a).replace("'",'"'))
+    open(fn,'w').close()
+    a=open(fn,'ab')
+    rsize=1024
+    while toread>0:
+     time.sleep(0.5)
+     read=min(toread,rsize,102400)
+     toread-=read
+     ti=time.time()
+     a.write(self.rfile.read(read))
+     rsize=int(min(rsize/(time.time()-ti)+1,2**22))
+    self.rfile.read(blen)
+  else:
+   if 1:
+    data=self.rfile.read(lenn).decode().replace('+',' ')
     data=uqu(data)
+    dec,data=data.split('=',1)
     if dec=='c=':
      open('clip','w').write(data)
     if dec=='a=':
@@ -295,36 +320,6 @@ class MyServer(BaseHTTPRequestHandler):
      print(pas)
      if data==pas:
       admin=0
-   else:
-    bytearray(self.rfile.read(92))
-    data=bytearray(self.rfile.read(1))
-    while data[-1:] != bytearray('"','utf-8'):
-     data+=bytearray(self.rfile.read(1))
-    data=data[:-1]
-    fn=data[:]
-    data=self.rfile.read(4)
-    while data[-4:] != bytearray('\r\n\r\n','utf-8'):
-     data+=self.rfile.read(1)
-    toread=lenn-len(fn)-len(data)-95-46
-    fn='.'+self.path+fn.decode()
-    if os.path.exists(fn):
-     tosave=0
-     while os.path.exists(fn+str(tosave)):
-      tosave+=1
-     fn+=str(tosave)
-    a=l(open('listfiles').read())
-    a[fn]=toread
-    open('listfiles','w').write(str(a).replace("'",'"'))
-    open(fn,'w').close()
-    a=open(fn,'ab')
-    rsize=1024
-    while toread>0:
-     read=min(toread,rsize,102400)
-     toread-=read
-     ti=time.time()
-     a.write(self.rfile.read(read))
-     rsize=int(min(rsize/(time.time()-ti)+0.5,10))
-    self.rfile.read(46)
   self.send_response(200)
   self.send_header("Content-type", "text/html; charset=utf-8")
   self.end_headers()
