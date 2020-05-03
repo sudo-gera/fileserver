@@ -157,24 +157,52 @@ class MyServer(BaseHTTPRequestHandler):
    if path == './0/':
     self.wfile.write(bytes('''
     <h1>
-    <form enctype="multipart/form-data" method="post">
+    <form enctype="multipart/form-data" method="post" name="sendfile">
      <wi><input type="file" name="u">
-     <input type="submit" value="upload"></form></wi>
+     </form></wi>
     </h1>
+    <div id="log"></div>
+    <wi>===</wi>
+
+   <script>
+    document.forms.sendfile.onchange=function(){
+     var file=this.elements.u.files[0]
+     if (file) {
+      x=new XMLHttpRequest();
+      x.upload.onprogress=function(){
+       if (event.loaded!=event.total){
+        document.getElementById('log') .innerHTML='<wi>'+event.loaded+'<br/>'+event.total+'</wi>'
+        document.getElementById('maincont') .innerHTML=''}
+       else{
+        location.reload(true)
+       }
+      }
+      x.open("POST",'.')
+      x.setRequestHeader("fn",file.name)
+      x.send(file)
+     }
+    }
+   </script>
+
      ''','utf-8'))
    self.wfile.write(bytes('''
-    <wi>===</wi>
+   <maincont id="maincont">
+
+     ''','utf-8'))
+   if path == './0/':
+    self.wfile.write(bytes('''
 
    <wi><form method="post">
    <textarea name="c">'''+clip+'''</textarea><br>
    <input type="submit" value="save"></form></wi>
    <wi>===</wi>
 
+   ''','utf-8'))
+   self.wfile.write(bytes('''
    <form><button formaction="../">
    <h1>..<img src="/favicon.ico" height="25"></h1>
    </button></form>
    <wi>===</wi>
-
    ''','utf-8'))
    if admin==2:
     self.wfile.write(bytes('''
@@ -182,16 +210,18 @@ class MyServer(BaseHTTPRequestHandler):
    <h1>exit</h1>
    </button></form>
    <wi>===</wi>
-   ''','utf-8')
+   ''','utf-8'))
 
-   for w in os.listdir(path):
+   ld=list(os.listdir(path))
+   ld=ld[::-1]
+   for w in ld:
     self.wfile.write(bytes('''
     <form><button formaction="'''+w+'''/">
     <h1>'''+w+'''
     <img src="/favicon.ico" height="25">'''*int(os.path.isdir(path+w))+'''
     </h1></button></form>''','utf-8'))
 
-   self.wfile.write(bytes('''</div></body></html>''', "utf-8"))
+   self.wfile.write(bytes('''</maincont></div></body></html>''', "utf-8"))
 
   elif os.path.isfile(path):
    if ngrok or path[:4]!='./0/':
@@ -278,8 +308,13 @@ class MyServer(BaseHTTPRequestHandler):
   global admin
   lenn=int(self.headers['Content-Length'])
   ct=self.headers['Content-Type']
-  if ct[:9]=='multipart':
-   blen=len(ct.split('=')[1])+8
+  ct=str(ct).split('/')
+  o=ct[1:]
+  ct=ct[0]
+
+  print(self.headers)
+  if ct=='multipart':
+   blen=len(o[0].split('=')[1])+8
    if 1:
     data=bytearray()
     while data[-4:]!=bytearray('\r\n\r\n','utf-8'):
@@ -287,11 +322,12 @@ class MyServer(BaseHTTPRequestHandler):
      lenn-=1
     toread=lenn-blen
     fn=uqu(data.decode().replace('+',' ')).split('filename',1)[1].split('"')[1]
-    fn='.'+self.path+fn
+    file=fn
+    fn='.'+self.path+file
     tosave=0
     while os.path.exists(fn):
      tosave+=1
-     fn='.'+self.path+str(tosave)+fn
+     fn='.'+self.path+str(tosave)+file
     a=l(open('listfiles').read())
     a[fn]=toread
     open('listfiles','w').write(str(a).replace("'",'"'))
@@ -299,16 +335,37 @@ class MyServer(BaseHTTPRequestHandler):
     a=open(fn,'ab')
     rsize=1024
     while toread>0:
-     time.sleep(0.5)
      read=min(toread,rsize,102400)
      toread-=read
      ti=time.time()
      a.write(self.rfile.read(read))
      rsize=int(min(rsize/(time.time()-ti)+1,2**22))
     self.rfile.read(blen)
-  else:
+  elif self.headers['fn']:
+   name=self.headers['fn']
    if 1:
-    data=self.rfile.read(lenn).decode().replace('+',' ')
+    toread=lenn
+    file=name
+    fn='.'+self.path+file
+    tosave=0
+    while os.path.exists(fn):
+     tosave+=1
+     fn='.'+self.path+str(tosave)+file
+    a=l(open('listfiles').read())
+    a[fn]=toread
+    open('listfiles','w').write(str(a).replace("'",'"'))
+    open(fn,'w').close()
+    a=open(fn,'ab')
+    rsize=1024
+    while toread>0:
+     read=min(toread,rsize,102400)
+     toread-=read
+     ti=time.time()
+     a.write(self.rfile.read(read))
+     rsize=max(int(min(rsize/(time.time()-ti),2**22)),1)
+  else:
+    data=self.rfile.read(lenn)
+    data=data.decode().replace('+',' ')
     data=uqu(data)
     dec,data=data.split('=',1)
     if dec=='c':
@@ -329,6 +386,7 @@ class MyServer(BaseHTTPRequestHandler):
       admin=2
     if dec=='e':
      admin=1
+
   self.send_response(200)
   self.send_header("Content-type", "text/html; charset=utf-8")
   self.end_headers()
