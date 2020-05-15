@@ -1,4 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/python
+''':'
+python3 $0 $@
+exit
+':'''
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 from urllib.request import urlopen as u
@@ -8,9 +11,14 @@ from sys import argv
 import os
 import random
 
+def dlistdir(q):
+ return [w for w in os.listdir(q) if w != '...']
 os.chdir('/'.join(argv[0].split('/')[:-1]))
 q=[w.split() for w in os.popen('ifconfig').read().split('\n')]
-q=[w[1].split(':')[1] for w in q if len(w) and w[0] == 'inet']
+q=[w[1] for w in q if len(w) and w[0] == 'inet']
+q=[w[([int(ww in '1234567890') for ww in w]+[1]).index(1):] for w in q]
+q=[w[:([int(ww not in '1234567890.') for ww in w]+[1]).index(1)] for w in q]
+#q=[w[1].split(':')[1] for w in q if len(w) and w[0] == 'inet']
 print('='*10,*enumerate(q),sep='\n')
 if len(argv) > 1:
  argv1=argv[1]
@@ -39,7 +47,7 @@ admin=0
 
 def exex():
  global hostName
- port=os.popen('./fileport '+hostName+' '+str(hostPort)+' 2').read().split('='*9)[-1][1:-1]
+ port=os.popen('./fileport.py '+hostName+' '+str(hostPort)+' 2').read().split('='*9)[-1][1:-1]
  return port
 class MyServer(BaseHTTPRequestHandler):
  def do_GET(self):
@@ -157,9 +165,14 @@ class MyServer(BaseHTTPRequestHandler):
    if path == './0/':
     self.wfile.write(bytes('''
     <h1>
-    <form enctype="multipart/form-data" method="post" name="sendfile">
-     <wi><input type="file" name="u">
-     </form></wi>
+     <form enctype="multipart/form-data" method="post" name="sendfile">
+      <wi>
+       <input type="file" name="u">
+       <inp id="inp">
+        <input type="submit">
+       </inp>
+      </wi>
+     </form>
     </h1>
     <div id="log"></div>
     <wi>===</wi>
@@ -168,17 +181,25 @@ class MyServer(BaseHTTPRequestHandler):
     document.forms.sendfile.onchange=function(){
      var file=this.elements.u.files[0]
      if (file) {
+      document.getElementById('maincont').innerHTML=''
+      document.getElementById('inp').innerHTML=''
       x=new XMLHttpRequest();
       x.upload.onprogress=function(){
        if (event.loaded!=event.total){
         document.getElementById('log') .innerHTML='<wi>'+event.loaded+'<br/>'+event.total+'</wi>'
-        document.getElementById('maincont') .innerHTML=''}
+        }
        else{
         location.reload(true)
        }
       }
       x.open("POST",'.')
-      x.setRequestHeader("fn",file.name)
+      var a=file.name
+      var e=''
+      var w=0
+      for (w=0;w<a.length;w+=1){
+       e+=a.charCodeAt(w).toString()+'a'
+      }
+      x.setRequestHeader("fn",e)
       x.send(file)
      }
     }
@@ -212,7 +233,7 @@ class MyServer(BaseHTTPRequestHandler):
    <wi>===</wi>
    ''','utf-8'))
 
-   ld=list(os.listdir(path))
+   ld=list(dlistdir(path))
    ld=ld[::-1]
    for w in ld:
     self.wfile.write(bytes('''
@@ -226,9 +247,9 @@ class MyServer(BaseHTTPRequestHandler):
   elif os.path.isfile(path):
    if ngrok or path[:4]!='./0/':
     q=open(path,'br')
-    di=l(open('listfiles').read())
+    di=l(open('0/...').read())
     if path in di.keys():
-     tosend=l(open('listfiles').read())[path]
+     tosend=l(open('0/...').read())[path]
      toread=0
      self.send_header("Content-type", "file/file")
      self.send_header("Content-Length", str(tosend))
@@ -328,9 +349,9 @@ class MyServer(BaseHTTPRequestHandler):
     while os.path.exists(fn):
      tosave+=1
      fn='.'+self.path+str(tosave)+file
-    a=l(open('listfiles').read())
+    a=l(open('0/...').read())
     a[fn]=toread
-    open('listfiles','w').write(str(a).replace("'",'"'))
+    open('0/...','w').write(str(a).replace("'",'"'))
     open(fn,'w').close()
     a=open(fn,'ab')
     rsize=1024
@@ -343,6 +364,9 @@ class MyServer(BaseHTTPRequestHandler):
     self.rfile.read(blen)
   elif self.headers['fn']:
    name=self.headers['fn']
+   name=name[:-1].split('a')
+   name=[chr(int(w)) for w in name]
+   name=''.join(name)
    if 1:
     toread=lenn
     file=name
@@ -351,9 +375,9 @@ class MyServer(BaseHTTPRequestHandler):
     while os.path.exists(fn):
      tosave+=1
      fn='.'+self.path+str(tosave)+file
-    a=l(open('listfiles').read())
+    a=l(open('0/...').read())
     a[fn]=toread
-    open('listfiles','w').write(str(a).replace("'",'"'))
+    open('0/...','w').write(str(a).replace("'",'"'))
     open(fn,'w').close()
     a=open(fn,'ab')
     rsize=1024

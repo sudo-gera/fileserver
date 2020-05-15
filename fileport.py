@@ -1,4 +1,7 @@
-#!/data/data/com.termux/files/usr/bin/python
+''':'
+python3 $0 $@
+exit
+':'''
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import time
 from urllib.request import urlopen as u
@@ -7,9 +10,14 @@ from sys import argv
 import os
 import random
 
+def dlistdir(q):
+ return [w for w in os.listdir(q) if w != '...']
 os.chdir('/'.join(argv[0].split('/')[:-1]))
 q=[w.split() for w in os.popen('ifconfig').read().split('\n')]
-q=[w[1].split(':')[1] for w in q if len(w) and w[0] == 'inet']
+q=[w[1] for w in q if len(w) and w[0] == 'inet']
+q=[w[([int(ww in '1234567890') for ww in w]+[1]).index(1):] for w in q]
+q=[w[:([int(ww not in '1234567890.') for ww in w]+[1]).index(1)] for w in q]
+#q=[w[1].split(':')[1] for w in q if len(w) and w[0] == 'inet']
 print('='*10,*enumerate(q),sep='\n')
 if len(argv) > 1:
  argv1=argv[1]
@@ -46,5 +54,5 @@ while st and hostPort < 70000:
  except:
   hostPort+=1
 myServer.server_close()
-os.system('./fileserver '+hostName+' '+str(hostPort)+' "'+random.choice(os.listdir('nekopara'))+'" '+ngrok+' > log &')
+os.system('./fileserver.py '+hostName+' '+str(hostPort)+' "'+random.choice(os.listdir('nekopara'))+'" '+ngrok+' > log &')
 print('='*9,hostPort)
