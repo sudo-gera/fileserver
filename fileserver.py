@@ -33,6 +33,7 @@ if len(argv) > 3:
  img='/nekopara/'+argv[3]
 else:
  img='/nekopara.jpg'
+q=['0.0.0.0']
 if len(q) > 1:
  e=int(input())
 else:

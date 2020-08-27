@@ -28,6 +28,7 @@ if len(argv) > 2:
  port=int(argv[2])
 else:
  port=9000
+q=['0.0.0.0']
 if len(q) > 1:
  e=int(input())
 else:
